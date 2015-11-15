@@ -54,6 +54,14 @@ module Backup
       ##
       # Return the remote path for the current or given package.
       def remote_path(pkg = package)
+        # if pkg.use_folder
+        #   folder_name = pkg.folder_name.present? ? pkg.folder_name : pkg.time
+        #   path.empty? ? File.join(pkg.trigger, folder_name) :
+        #                 File.join(path, pkg.trigger, folder_name)
+        # else
+        #   path.empty? ? File.join(pkg.trigger) :
+        #                 File.join(path, pkg.trigger)
+        # end
         path.empty? ? File.join(pkg.trigger, pkg.time) :
                       File.join(path, pkg.trigger, pkg.time)
       end

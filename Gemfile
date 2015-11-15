@@ -22,7 +22,7 @@ source 'https://rubygems.org'
 group :production do
   gem 'thor'
   gem 'open4'
-  gem 'fog'
+  gem 'fog', '~> 1.9.0'
   # gem 'excon' - use version specified by fog
   gem 'unf' # for fog/AWS
   gem 'dropbox-sdk', '= 1.5.1' # patched

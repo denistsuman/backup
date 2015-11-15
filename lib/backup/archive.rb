@@ -58,8 +58,11 @@ module Backup
         :sudo        => false,
         :root        => false,
         :paths       => [],
-        :excludes    => [],
-        :tar_options => ''
+        :excludes    => []#,
+        # :tar_options => '',
+        # :folder_name => '',
+        # :use_folder  => true,
+        # :shell_params=> ''
       }
       DSL.new(@options).instance_eval(&block)
     end
@@ -77,6 +80,8 @@ module Backup
           "#{ paths_to_exclude } #{ files_from }",
           tar_success_codes
         )
+        Logger.info "#{ tar_command } #{ tar_options } -cPf -#{ tar_root } " +
+          "#{ paths_to_exclude } #{ files_from }"
 
         extension = 'tar'
         @model.compressor.compress_with do |command, ext|
@@ -114,6 +119,9 @@ module Backup
 
     def with_files_from(paths)
       tmpfile = Tempfile.new('backup-archive-paths')
+      # paths.each do |path|
+      #    %x[find #{File.expand_path(path)} -type f -newermt 2015-11-13].split("\n").each { |f| tmpfile.puts File.expand_path(f) }
+      # end
       paths.each {|path| tmpfile.puts path }
       tmpfile.close
       yield "-T '#{ tmpfile.path }'"
@@ -161,9 +169,21 @@ module Backup
         @options[:excludes] << path
       end
 
+      # def shell_params(params)
+      #   @options[:shell_params] = params
+      # end
+
       def tar_options(opts)
         @options[:tar_options] = opts
       end
+
+      # def use_folder(val = true)
+      #   @options[:use_folder] = val
+      # end
+
+      # def folder_name(name)
+      #   @options[:folder_name] = name
+      # end
     end
 
   end

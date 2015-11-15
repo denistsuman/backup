@@ -22,6 +22,8 @@ module Backup
 
       attr_reader :excludes
 
+      # attr_reader :find_params
+
       def initialize(syncer_id = nil)
         @syncer_id = syncer_id
 
@@ -30,6 +32,7 @@ module Backup
         @mirror ||= false
         @directories ||= []
         @excludes ||= []
+        # @find_params ||= ''
       end
 
       ##
@@ -41,6 +44,10 @@ module Backup
 
       def add(path)
         directories << path
+      end
+
+      def find_params(params)
+        @find_params = params
       end
 
       # For Cloud Syncers, +pattern+ can be a string (with shell-style

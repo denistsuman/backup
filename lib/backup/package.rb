@@ -7,6 +7,18 @@ module Backup
     # The time when the backup initiated (in format: 2011.02.20.03.29.59)
     attr_accessor :time
 
+    # ##
+    # # Archive folder name
+    # attr_accessor :folder_name
+
+    # ##
+    # # Using foler option
+    # attr_accessor :use_folder
+
+    # ##
+    # # Shell params
+    # attr_accessor :find_params
+
     ##
     # The trigger which initiated the backup process
     attr_reader :trigger

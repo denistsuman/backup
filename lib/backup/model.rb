@@ -261,6 +261,10 @@ module Backup
     def perform!
       @started_at = Time.now.utc
       @time = package.time = started_at.strftime("%Y.%m.%d.%H.%M.%S")
+      # @folder_name = package.folder_name = @trigger
+      # package.use_folder = @use_folder
+      # package.no_cycle = true unless @use_folder
+      # package.find_params = @find_params
 
       log!(:started)
       before_hook
