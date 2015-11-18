@@ -10,6 +10,7 @@ module Backup
   module Syncer
     module Cloud
       class Base < Syncer::Base
+        include Backup::CLI::Helpers
 
         ##
         # Create a Mutex to synchronize certain parts of the code
@@ -39,7 +40,7 @@ module Backup
         # If not specified in the pre-configured defaults,
         # the Cloud specific defaults are set here before evaluating
         # any block provided in the user's configuration file.
-        def initialize
+        def initialize(model)
           super
 
           @concurrency_type  ||= false
@@ -53,11 +54,12 @@ module Backup
             "#{ syncer_name } started the syncing process:\n" +
             "\s\sConcurrency: #{ @concurrency_type } Level: #{ @concurrency_level }"
           )
-          
+
           @directories.each do |directory|
             SyncContext.new(
-              File.expand_path(directory), repository_object, @path, date_from, archived
-            ).sync! @mirror, @concurrency_type, @concurrency_level
+              File.expand_path(directory), repository_object, @path, date_from,
+                archived, trigger
+              ).sync! @mirror, @concurrency_type, @concurrency_level
           end
 
           Logger.message("#{ syncer_name } Syncing Complete!")
@@ -66,15 +68,21 @@ module Backup
         private
 
         class SyncContext
-          attr_reader :directory, :bucket, :path, :remote_base, :date_from, :archived
+          attr_reader :directory, :bucket, :path, :remote_base, :date_from,
+                      :archived, :trigger
 
           ##
           # Creates a new SyncContext object which handles a single directory
           # from the Syncer::Base @directories array.
-          def initialize(directory, bucket, path, date_from, archived)
-            @directory, @bucket, @path, @date_from, @archived =
-                directory, bucket, path, date_from, archived
-            @remote_base = File.join(path, File.basename(directory))
+          def initialize(directory, bucket, path, date_from, archived, trigger)
+            @directory, @bucket, @path, @date_from, @archived, @trigger =
+                directory, bucket, path, date_from, archived, trigger
+            if @archived
+              @remote_base = File.join(path, trigger)
+            else
+              @remote_base = File.join(path, File.basename(directory))
+            end
+            @remote_base = File.join(@remote_base, date_from) if date_from
           end
 
           ##
@@ -96,6 +104,8 @@ module Backup
               raise Errors::Syncer::Cloud::ConfigurationError,
                   "Unknown concurrency_type setting: #{ concurrency_type.inspect }"
             end
+
+            clean!
           end
 
           private
@@ -130,17 +140,51 @@ module Backup
           def local_hashes
             Logger.message("\s\sGenerating checksums for '#{ @directory }'")
             if @archived
+              @filename = "#{@trigger}.tar"
+              return '' unless local_package
+              select_files
+            else
+              select_files
+            end
+          end
+
+          def local_package
+            if files_present?
               tar =  "find '#{ @directory }'"
               tar += " -type f -newermt #{@date_from}" if @date_from
-              tar += " -print0 | xargs -0 tar -cPf tmp/emailstore_hourly/tmp_archive.tar"
-              find =  "find tmp/tmp_archive.tar -print0 | xargs -0 openssl md5 2> /dev/null"
+              tar += " -print0 | xargs -0 tar -cPf #{@filename}"
               `#{tar}`
-              `#{find}`
+              true
+            else
+              false
+            end
+          end
+
+          def select_files
+            if @filename
+              `find #{@filename} -print0 | xargs -0 openssl md5 2> /dev/null`
             else
               find =  "find '#{ @directory }'"
-              find += " -newermt #{@date_from}" if @date_from
+              find += " -type f -newermt #{@date_from}" if @date_from
               find += " -print0 | xargs -0 openssl md5 2> /dev/null"
               `#{find}`
+            end
+          end
+
+          def clean!
+            Logger.message("Cleaning the package files...")
+            FileUtils.rm_rf(File.join(Config.tmp_path, @trigger))
+            FileUtils.rm_rf(@filename) if @filename
+          end
+
+          def files_present?
+            find  = "find '#{ @directory }'"
+            find += " -type f -newermt #{@date_from}" if @date_from
+            if `#{find}` == ""
+              Logger.message("The target folder is empty. Skipping...")
+              false
+            else
+              true
             end
           end
 

@@ -33,14 +33,13 @@ module Backup
         #
         # Once pre-configured defaults and Cloud specific defaults are set,
         # the block from the user's configuration file is evaluated.
-        def initialize(&block)
+        def initialize(model, &block)
           super
 
           instance_eval(&block) if block_given?
           @path = path.sub(/^\//, '')
           @date_from = date_from
           @archived = archived || false
-          p Backup::Config.name
         end
 
         private
@@ -71,13 +70,13 @@ module Backup
           "AWS"
         end
 
-        def date_from
-          @date_from
-        end
+        # def date_from
+        #   @date_from
+        # end
 
-        def archived
-          @archived
-        end
+        # def archived
+        #   @archived
+        # end
 
       end # Class S3 < Base
     end # module Cloud

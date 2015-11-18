@@ -11,7 +11,7 @@ module Backup
         ##
         # Instantiates a new RSync Syncer object
         # and sets the default configuration
-        def initialize
+        def initialize(model)
           super
 
           @additional_options ||= Array.new

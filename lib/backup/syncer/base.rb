@@ -14,12 +14,15 @@ module Backup
       # Flag for mirroring the files/directories
       attr_accessor :mirror
 
-      def initialize
+      attr_accessor :trigger
+
+      def initialize(model)
         load_defaults!
 
         @path               ||= 'backups'
         @mirror             ||= false
         @directories          = Array.new
+        @trigger = model.trigger
       end
 
       ##

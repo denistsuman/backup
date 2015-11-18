@@ -155,7 +155,7 @@ module Backup
         EOS
         name = "Cloud::#{ syncer }"
       end
-      @syncers << get_class_from_scope(Syncer, name).new(&block)
+      @syncers << get_class_from_scope(Syncer, name).new(self, &block)
     end
 
     ##
