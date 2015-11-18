@@ -17,6 +17,12 @@ module Backup
         # The AWS region of the specified S3 bucket
         attr_accessor :region
 
+        # sync files only from specified date
+        attr_accessor :date_from
+
+        # archive files before uploading
+        attr_accessor :archived
+
         ##
         # Instantiates a new Cloud::S3 Syncer.
         #
@@ -32,6 +38,9 @@ module Backup
 
           instance_eval(&block) if block_given?
           @path = path.sub(/^\//, '')
+          @date_from = date_from
+          @archived = archived || false
+          p Backup::Config.name
         end
 
         private
@@ -60,6 +69,14 @@ module Backup
         # This is the provider that Fog uses for the Cloud Files
         def provider
           "AWS"
+        end
+
+        def date_from
+          @date_from
+        end
+
+        def archived
+          @archived
         end
 
       end # Class S3 < Base

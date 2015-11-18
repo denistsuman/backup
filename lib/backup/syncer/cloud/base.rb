@@ -53,10 +53,10 @@ module Backup
             "#{ syncer_name } started the syncing process:\n" +
             "\s\sConcurrency: #{ @concurrency_type } Level: #{ @concurrency_level }"
           )
-
+          
           @directories.each do |directory|
             SyncContext.new(
-              File.expand_path(directory), repository_object, @path
+              File.expand_path(directory), repository_object, @path, date_from, archived
             ).sync! @mirror, @concurrency_type, @concurrency_level
           end
 
@@ -66,13 +66,14 @@ module Backup
         private
 
         class SyncContext
-          attr_reader :directory, :bucket, :path, :remote_base
+          attr_reader :directory, :bucket, :path, :remote_base, :date_from, :archived
 
           ##
           # Creates a new SyncContext object which handles a single directory
           # from the Syncer::Base @directories array.
-          def initialize(directory, bucket, path)
-            @directory, @bucket, @path = directory, bucket, path
+          def initialize(directory, bucket, path, date_from, archived)
+            @directory, @bucket, @path, @date_from, @archived =
+                directory, bucket, path, date_from, archived
             @remote_base = File.join(path, File.basename(directory))
           end
 
@@ -128,7 +129,19 @@ module Backup
           # Returns a String of file paths and their md5 hashes.
           def local_hashes
             Logger.message("\s\sGenerating checksums for '#{ @directory }'")
-            `find '#{ @directory }' -print0 | xargs -0 openssl md5 2> /dev/null`
+            if @archived
+              tar =  "find '#{ @directory }'"
+              tar += " -type f -newermt #{@date_from}" if @date_from
+              tar += " -print0 | xargs -0 tar -cPf tmp/emailstore_hourly/tmp_archive.tar"
+              find =  "find tmp/tmp_archive.tar -print0 | xargs -0 openssl md5 2> /dev/null"
+              `#{tar}`
+              `#{find}`
+            else
+              find =  "find '#{ @directory }'"
+              find += " -newermt #{@date_from}" if @date_from
+              find += " -print0 | xargs -0 openssl md5 2> /dev/null"
+              `#{find}`
+            end
           end
 
           ##
